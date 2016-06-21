@@ -14,6 +14,7 @@ I want to develop a new compiler to address shortcomings in existing compilers. 
 - Library and CLI interfaces
 - Modular design
 - Expanded Spin functionality
+- Comprehensive test suite
 
 ### Progress:
 
