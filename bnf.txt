@@ -1,0 +1,66 @@
+<constant-block> ::= ^CON <space> \n
+<public-block> ::= ^PUB <> \n
+
+<literal> ::= #<number>
+
+<float> ::= <decimal>.<decimal>
+
+<number> ::= <decimal>
+           | <float>
+           | $<hexadecimal>
+           | %%<quaternary>
+           | %<binary>
+
+<expression> ::= <assignment-expression>
+
+<constant> ::= <identifier>
+             | <number>
+
+<string> ::= "<string-text>"
+<string-text> ::=
+
+
+# PUB / PRI grammar
+
+<pubpri-line> ::= <indent> <expression>
+
+
+
+# CON grammar
+
+<con-block> ::= con
+
+<constant-line> ::= <constant-assignment>
+                  | <constant-array>
+
+
+
+<constant-assignment> ::= <constant-identifier> = <constant-expression>
+
+<constant-expression> ::= <constant-term>
+                        | <constant-term> + <constant-term>
+                        | <constant-term> - <constant-term>
+
+<constant-term> ::= <constant-factor>
+                  | <constant-factor> * <constant-factor>
+                  | <constant-factor> / <constant-factor>
+
+<constant-array> ::= <literal>, <constant-array-item>
+
+<constant-array-item> ::= <constant-identifier>
+                        | <constant-identifier>, <constant-array-item>
+                        | <constant-identifier [ <constant-offset> ], <constant-array-item>
+
+# VAR grammar
+
+
+
+# OBJ grammar
+
+<line> ::= <alias> : <string>
+
+<alias> ::= <identifier>
+
+# DAT grammar
+# ASM grammar
+

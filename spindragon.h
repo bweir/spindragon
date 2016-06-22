@@ -3,21 +3,7 @@
 #include <QString>
 #include <QRegularExpression>
 
-#include <exception>
-
-class ParseError : public std::exception
-{
-public:
-    const char* what() const throw();
-};
-
-class ExpectedError : public ParseError
-{
-public:
-    const char* what() const throw();
-};
-
-
+#include "tokens.h"
 
 class Production;
 
@@ -36,30 +22,62 @@ class SpinDragon
     int     _index;
     QString _in;
     QString _text;
-    QString _pattern;
+
+    Block   _block;
+
+
 
 private:
     void eatToken(QString t);
-    bool match(QString pattern);
-    bool look(QString pattern);
-    void expected(QString pattern);
+    bool match(QString pattern, bool casesensitive = true);
+    bool look(QString pattern, bool casesensitive = true);
     void reset();
     bool atEnd();
 
     QString allowUnderscore(QString s);
 
+    bool isEmptyLine();
+    bool isIdentifier();
+    bool isNumber();
+    bool isString();
+
     void getIndent();
+    void get(QString s);
     void print(QString s);
     int eatSpace();
+
+    void getProgram();
+    void getLine();
+
+    void getFunction();
     void getIdentifier();
     void getOperator();
     void getNewLine();
     void getNumber();
+    void getLiteral();
     void getExpression();
 
     void getString();
     void getParameter();
     void getParameters();
+
+    void getConstant();
+    void getConstantLine();
+
+    void getConstantArray();
+    void getConstantArrayItem();
+
+    void getConstantAssignment();
+    void getConstantExpression();
+    void getConstantAdd();
+    void getConstantSubtract();
+    void getConstantTerm();
+    void getConstantMultiply();
+    void getConstantDivide();
+    void getConstantFactor();
+    void getConstantIdentifier();
+    void getConstantPrimaryExpression();
+
 
     void getFloat();
     void getDecimal();
