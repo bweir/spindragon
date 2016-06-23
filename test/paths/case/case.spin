@@ -4,3 +4,5 @@ OBJ
     case3 : "obj.spin.spin"
     case4 : "OBJ"
     case5 : "OBJ.SPIN"
+
+pub null

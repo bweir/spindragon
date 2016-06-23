@@ -15,8 +15,9 @@ class SpinDragonPaths : public QObject
             QString name, 
             Qt::CaseSensitivity cs = Qt::CaseSensitive);
 
-    QString searchLibraries(QString filename);
     QString searchDirectory(QString path, QString name);
+    QString searchSubdirectories(QString path, QString name);
+    QString searchLibraries(QString filename);
 
 public:
     explicit SpinDragonPaths();

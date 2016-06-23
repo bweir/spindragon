@@ -44,7 +44,6 @@ bool SpinDragonPaths::addPath(QString pathname)
     if (QDir(pathname).exists())
     {
         _paths << pathname;
-        qDebug() << _paths;
         return true;
     }
     return false;
@@ -75,9 +74,9 @@ QString SpinDragonPaths::getFileName(QStringList entries,
     {
         if (filtered.size() > 1)
         {
-            qDebug() << "Warning: More than one candidate for"
+            qDebug() << "Warning:" 
                 << name 
-                <<"; selecting first file:" 
+                << "has more than one candidate; selecting" 
                 << filtered[0];
         }
 
@@ -87,18 +86,18 @@ QString SpinDragonPaths::getFileName(QStringList entries,
 
 QString SpinDragonPaths::searchDirectory(QString path, QString name)
 {
-    QStringList entries = QDir(path).entryList();
+    QStringList entries = QDir(path).entryList(QStringList() << "*.spin");
+    QFileInfo fi(name);
     QString fn;
 
-    QFileInfo fi(name);
-    if (fi.suffix().compare("spin",Qt::CaseInsensitive))
-        name = fi.completeBaseName();
-    
-    if (!(fn = getFileName(entries, name)).isEmpty())
-        return fn;
-    
-    if (!(fn = getFileName(entries, name, Qt::CaseInsensitive)).isEmpty())
-        return fn;
+    if (!fi.suffix().compare("spin",Qt::CaseInsensitive))
+    {
+        if (!(fn = getFileName(entries, name)).isEmpty())
+            return fn;
+        
+        if (!(fn = getFileName(entries, name, Qt::CaseInsensitive)).isEmpty())
+            return fn;
+    }
     
     name += ".spin";
     
@@ -111,13 +110,55 @@ QString SpinDragonPaths::searchDirectory(QString path, QString name)
     return QString();
 }
 
+QString SpinDragonPaths::searchSubdirectories(QString path, QString name)
+{
+    QStringList pieces = name.split(".");
+    QString fn;
+
+    if (pieces.size() > 2)
+    {
+        path += "/"+pieces.first();
+        pieces.removeFirst();
+
+        return searchSubdirectories(path, pieces.join("."));
+    }
+    else if (pieces.size() == 2)
+    {
+        if (!pieces.last().compare("spin",Qt::CaseInsensitive))
+        {
+            if (!(fn = searchDirectory(path, name)).isEmpty())
+                return QDir(path).filePath(fn);
+        }
+        else
+        {
+            path += "/"+pieces.first();
+            pieces.removeFirst();
+
+            return searchSubdirectories(path, pieces.join("."));
+        }
+    }
+    else
+    {
+        if (!(fn = searchDirectory(path, name)).isEmpty())
+            return QDir(path).filePath(fn);
+    }
+
+    return QString();
+}
+
 QString SpinDragonPaths::searchLibraries(QString name)
 {
     foreach (QString path, _paths)
     {
         QString fn;
-        if (!(fn = searchDirectory(path, name)).isEmpty())
-            return QDir(path).filePath(fn);
+
+        // subdirectory
+        if (!(fn = searchSubdirectories(path, name)).isEmpty())
+            return fn;
+
+        // traditional directory
+//        if (!(fn = searchDirectory(path, name)).isEmpty())
+//            return QDir(path).filePath(fn);
     }
 
     return QString();
@@ -133,15 +174,19 @@ QString SpinDragonPaths::findObject(QString name)
 
     QString fn = searchLibraries(name);
 
-    QFileInfo fi(fn);
-
-    if (!fi.exists())
+    if (!QFileInfo(fn).exists())
     {
-        qDebug() << "File does not exist" << name;
+        qDebug() << "File does not exist" << name << fn;
         return QString();
+    }
+    else
+    {
+        qDebug() << "Found" << name << "as" << fn;
     }
 
     QString text = openFile(fn);
+
+    name = QFileInfo(name).completeBaseName();
 
     _files[name] = text;
 

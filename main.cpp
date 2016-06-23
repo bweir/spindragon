@@ -22,15 +22,22 @@ int main(int argc, char *argv[])
 
     paths.addPath(QFileInfo(filename).path());
     paths.addPath("/home/brett/Projects/lamestation-sdk/library");
+    paths.addPath("/home/brett/Projects/spin-standard-library/library");
 
-    paths.findObject("obj");
-    paths.findObject("obj.spin");
-    paths.findObject("OBJ.spin.spin");
-    paths.findObject("OBJ.spin");
-    paths.findObject("OBJ");
-
-    paths.findObject("LameLCD");
-
+//    paths.findObject("obj");
+//    paths.findObject("obj.spin");
+//    paths.findObject("OBJ.spin.spin");
+//    paths.findObject("OBJ.spin");
+//    paths.findObject("OBJ");
+//
+//    paths.findObject("media/fonts/8x8/gfx_font8x8");
+//    paths.findObject("media.fonts.8x8.gfx_font8x8");
+//    paths.findObject("media.fonts.8x8.gfx_font8x8.spin");
+//
+//    paths.findObject("LameLCD.spin");
+//
+//    paths.findObject("LameLCD");
+//    paths.findObject("lamelcd");
 
     qDebug() << "FILES" << paths.listFiles();
     qDebug() << "PATHS" << paths.listPaths();
