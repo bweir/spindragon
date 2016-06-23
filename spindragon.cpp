@@ -1,9 +1,11 @@
 #include "spindragon.h"
 #include "errors.h"
 
+#include <QFileInfo>
 #include <QDebug>
 
 SpinDragon::SpinDragon()
+    : QObject()
 {
     reset();
 }
@@ -36,14 +38,10 @@ bool SpinDragon::atEnd()
     return (_index >= _in.size());
 }
 
-bool SpinDragon::match(QString pattern, bool casesensitive)
+bool SpinDragon::match(QString pattern)
 {
-    QRegularExpression re(pattern, QRegularExpression::DotMatchesEverythingOption);
-    if (!casesensitive)
-    {
-        re.setPatternOptions(QRegularExpression::DotMatchesEverythingOption
-                           | QRegularExpression::CaseInsensitiveOption);
-    }
+    QRegularExpression re(pattern, QRegularExpression::DotMatchesEverythingOption
+                                 | QRegularExpression::CaseInsensitiveOption);
 
     QRegularExpressionMatch m = re.match(_in, _index);
 
@@ -59,14 +57,10 @@ bool SpinDragon::match(QString pattern, bool casesensitive)
     }
 }
 
-bool SpinDragon::look(QString pattern, bool casesensitive)
+bool SpinDragon::look(QString pattern)
 {
-    QRegularExpression re(pattern, QRegularExpression::DotMatchesEverythingOption);
-    if (!casesensitive)
-    {
-        re.setPatternOptions(QRegularExpression::DotMatchesEverythingOption
-                           | QRegularExpression::CaseInsensitiveOption);
-    }
+    QRegularExpression re(pattern, QRegularExpression::DotMatchesEverythingOption
+                                 | QRegularExpression::CaseInsensitiveOption);
 
     QRegularExpressionMatch m = re.match(_in, _index);
 
@@ -76,6 +70,7 @@ bool SpinDragon::look(QString pattern, bool casesensitive)
 void SpinDragon::print(QString s)
 {
     printf(" %s '%s'", qPrintable(s), qPrintable(_text));
+    fflush(stdout);
 }
 
 void SpinDragon::label(QString s)
@@ -202,6 +197,8 @@ void SpinDragon::getIdentifier()
 void SpinDragon::getParameter()
 {
     printf(" P");
+    fflush(stdout);
+
     getExpression();
 
     if (look(","))
@@ -216,6 +213,7 @@ void SpinDragon::getParameter()
 void SpinDragon::getParameters()
 {
     printf(" PARAMS ");
+    fflush(stdout);
 
     match("\\(");
     getParameter();
@@ -238,6 +236,7 @@ void SpinDragon::getNewLine()
     _lineindex = _index;
 
     printf(" NL\n");
+    fflush(stdout);
 }
 
 void SpinDragon::getIndent()
@@ -246,6 +245,8 @@ void SpinDragon::getIndent()
 
     for (int i = 0; i < indent; i++)
         printf(".");
+
+    fflush(stdout);
 }
 
 int SpinDragon::eatSpace()
@@ -494,44 +495,85 @@ bool SpinDragon::isEmptyLine()
     return look("[ \t]*\n");
 }
 
+void SpinDragon::getNewBlock(QString pattern, Block block)
+{
+    match(pattern);
+    print("NEWBLOCK");
+    eatSpace();
+    _block = block;
+    if (look("[^\n]")) 
+    {
+        throw Error(QString("%1 blocks must be on a line by themselves")
+                .arg(pattern.toUpper()));
+    }
+}
+
+void SpinDragon::getNewFunctionBlock(QString pattern, Block block)
+{
+    match(pattern);
+    print("NEWBLOCK");
+    eatSpace();
+    _block = block;
+
+    getFunction();
+
+    if (look("[^\n]")) 
+    {
+        throw Error(QString("%1 blocks should contain only a function declaration (e.g. 'PUB foo(bar, baz)'")
+                .arg(pattern.toUpper()));
+    }
+}
+
 void SpinDragon::getLine()
 {
     printf("%4i| ", _linenum);
+    fflush(stdout);
 
     if (isEmptyLine())
-    {
         eatSpace();
-        return;
-    }
 
-    if (look("con", false))
+    else if (look("con"))
+        getNewBlock("con", CON_BLOCK);
+
+    else if (look("var"))
+        getNewBlock("var", VAR_BLOCK);
+
+    else if (look("obj"))
+        getNewBlock("obj", OBJ_BLOCK);
+
+    else if (look("dat"))
+        getNewBlock("dat", DAT_BLOCK);
+
+    else if (look("pub"))
+        getNewFunctionBlock("pub", DAT_BLOCK);
+
+    else if (look("pri"))
+        getNewFunctionBlock("pri", DAT_BLOCK);
+
+    else
     {
-        match("con[ \t]*", false);
-        _block = CON_BLOCK;
-        return;
-    }
-
-    switch (_block)
-    {
-        case NO_BLOCK:   throw Error("You haven't opened a block yet (CON? PUB?)");
-                         return;
-
-        case CON_BLOCK:  getConstantLine();
-                         break;
-
-        case VAR_BLOCK:  return;
-
-        case OBJ_BLOCK:  return;
-
-        case PUB_BLOCK:   
-        case PRI_BLOCK:  return;
-
-        case DAT_BLOCK:  return;
-
-        case ASM_BLOCK:  return;
-
-        default:
-            throw Error("INVALID BLOCK");
+        switch (_block)
+        {
+            case NO_BLOCK:   throw Error("You haven't opened a block yet (CON? PUB?)");
+                             return;
+    
+            case CON_BLOCK:  getConstantLine();
+                             break;
+    
+            case VAR_BLOCK:  return;
+    
+            case OBJ_BLOCK:  return;
+    
+            case PUB_BLOCK:   
+            case PRI_BLOCK:  return;
+    
+            case DAT_BLOCK:  return;
+    
+            case ASM_BLOCK:  return;
+    
+            default:
+                throw Error("INVALID BLOCK");
+        }
     }
 }
 
@@ -549,7 +591,7 @@ void SpinDragon::getProgram()
 }
 
 
-bool SpinDragon::parse(QString text)
+bool SpinDragon::parse(QString text, QString filename)
 {
     reset();
     _in = text;
@@ -562,11 +604,16 @@ bool SpinDragon::parse(QString text)
     }
     catch (Error & e)
     {
-        fflush(stdout);
-        printf("%s\n", qPrintable(QString("\n\033[1;31mError (line %1, col %2):\033[0m %3").arg(_linenum).arg(_colnum).arg(e.what())));
+        fprintf(stderr, "%s\n", qPrintable(QString("\n\033[1;31m%1(%2,%3) Error:\033[0m %4")
+                    .arg(QFileInfo(filename).fileName())
+                    .arg(_linenum)
+                    .arg(_colnum)
+                    .arg(e.what())
+                    ));
 
-        printf("\n%s\n", qPrintable(_in.mid(_lineindex, _in.indexOf("\n",_lineindex) - _lineindex)));
-        printf("%s\033[1;37m^\033[0m\n", qPrintable(QString(_colnum, ' ')));
+        fprintf(stderr,"\n%s\n", qPrintable(_in.mid(_lineindex, _in.indexOf("\n",_lineindex) - _lineindex)));
+        fprintf(stderr,"%s\033[1;37m^\033[0m\n", qPrintable(QString(_colnum, ' ')));
+        fflush(stderr);
         return false;
     }
 

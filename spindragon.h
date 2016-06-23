@@ -14,8 +14,10 @@ public:
 };
 
 
-class SpinDragon
+class SpinDragon : public QObject
 {
+    Q_OBJECT
+
     int     _linenum;
     int     _colnum;
     int     _lineindex;
@@ -25,12 +27,10 @@ class SpinDragon
 
     Block   _block;
 
-
-
 private:
     void eatToken(QString t);
-    bool match(QString pattern, bool casesensitive = true);
-    bool look(QString pattern, bool casesensitive = true);
+    bool match(QString pattern);
+    bool look(QString pattern);
     void reset();
     bool atEnd();
 
@@ -48,6 +48,9 @@ private:
 
     void getProgram();
     void getLine();
+
+    void getNewBlock(QString pattern, Block block);
+    void getNewFunctionBlock(QString pattern, Block block);
 
     void getFunction();
     void getIdentifier();
@@ -91,7 +94,7 @@ private:
 public:
     explicit SpinDragon();
     ~SpinDragon();
-    bool parse(QString text);
+    bool parse(QString text, QString filename = QString());
 };
 
 

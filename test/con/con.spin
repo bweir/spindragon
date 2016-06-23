@@ -4,6 +4,10 @@ CON
 
 
     chickenmode =   (   2    +    5    )    /    3
-chickenmode=(2+5)/3
+baconmode=(2+5)/3
 
     #$0, bacon [5444], chicken, cats
+
+CON
+
+PUB null

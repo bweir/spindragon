@@ -1,12 +1,12 @@
-# spindragon
+= spindragon
 
 Something that may become an amazing Spin compiler someday.
 
-## Why?
+== Why?
 
 I want to develop a new compiler to address shortcomings in existing compilers. However, I've never made a compiler before so it may be a long time before that happens.
 
-### Design goals:
+=== Design goals:
 
 - Recursive descent parser
 - Written in Qt/C++
@@ -16,7 +16,7 @@ I want to develop a new compiler to address shortcomings in existing compilers. 
 - Expanded Spin functionality
 - Comprehensive test suite
 
-### Progress:
+=== Progress:
 
 - [x] Create project
 - [ ] Add tokenizer
@@ -24,3 +24,4 @@ I want to develop a new compiler to address shortcomings in existing compilers. 
 - [ ] Pretty printer
 - [ ] Documentation printer
 - [ ] Code generation
+

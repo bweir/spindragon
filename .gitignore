@@ -39,4 +39,4 @@ CMakeLists.txt.user
 
 spindragon
 .*.swp
-
+*.binary
