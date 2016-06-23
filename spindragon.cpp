@@ -165,6 +165,13 @@ void SpinDragon::getLiteral()
     eatSpace();
 }
 
+void SpinDragon::getArrayIndex()
+{
+    get("\\[");
+    getConstantExpression();
+    get("\\]");
+}
+
 void SpinDragon::getFunction()
 {
     getIdentifier();
@@ -490,6 +497,22 @@ void SpinDragon::getConstantLine()
     else throw ExpectedError("constant assignment (e.g. VAR = 123)");
 }
 
+
+void SpinDragon::getObjectLine()
+{
+    eatSpace();
+
+    getIdentifier();
+    eatSpace();
+
+    if (look("\\["))
+        getArrayIndex();
+
+    get(":");
+    getString();
+}
+
+
 bool SpinDragon::isEmptyLine()
 {
     return look("[ \t]*\n");
@@ -562,7 +585,8 @@ void SpinDragon::getLine()
     
             case VAR_BLOCK:  return;
     
-            case OBJ_BLOCK:  return;
+            case OBJ_BLOCK:  getObjectLine();
+                             return;
     
             case PUB_BLOCK:   
             case PRI_BLOCK:  return;
@@ -591,7 +615,7 @@ void SpinDragon::getProgram()
 }
 
 
-bool SpinDragon::parse(QString text, QString filename)
+bool SpinDragon::parse(QString text, QString filename, const SpinDragonPaths & paths)
 {
     reset();
     _in = text;

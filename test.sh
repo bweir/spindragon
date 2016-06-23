@@ -32,6 +32,11 @@ then
 
 fi
 
+
+echo "Expect  Result"
+echo "----------------------"
+
+
 while read line
 do
     filename=$(basename "$line")

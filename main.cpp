@@ -1,23 +1,43 @@
 #include "spindragon.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QDebug>
+
+#include "paths.h"
 
 int main(int argc, char *argv[])
 {
     Q_UNUSED(argc);
-    QFile file(argv[1]);
-    if (!file.open(QFile::ReadOnly))
+
+    SpinDragonPaths paths;
+
+    QString filename = argv[1];
+    QString text = paths.openFile(filename);
+    if (text.isEmpty())
     {
-        qDebug() << "Error: File not found:" << argv[1];
+        qDebug() << "Error: File not found:" << filename;
         return 1;
     }
-    QString text = file.readAll();
-    file.close();
+
+    paths.addPath(QFileInfo(filename).path());
+    paths.addPath("/home/brett/Projects/lamestation-sdk/library");
+
+    paths.findObject("obj");
+    paths.findObject("obj.spin");
+    paths.findObject("OBJ.spin.spin");
+    paths.findObject("OBJ.spin");
+    paths.findObject("OBJ");
+
+    paths.findObject("LameLCD");
+
+
+    qDebug() << "FILES" << paths.listFiles();
+    qDebug() << "PATHS" << paths.listPaths();
 
     SpinDragon spind;
 
-    bool success = spind.parse(text, argv[1]);
+    bool success = spind.parse(text, filename, paths);
 
     if (success)
         return 0;

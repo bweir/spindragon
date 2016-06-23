@@ -11,9 +11,11 @@ HEADERS += \
     spindragon.h \
     errors.h \
     tokens.h \
+    paths.h \
 
 SOURCES += \
     main.cpp \
     spindragon.cpp \
     errors.cpp \
+    paths.cpp \
 

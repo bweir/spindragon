@@ -4,6 +4,7 @@
 #include <QRegularExpression>
 
 #include "tokens.h"
+#include "paths.h"
 
 class Production;
 
@@ -26,6 +27,8 @@ class SpinDragon : public QObject
     QString _text;
 
     Block   _block;
+
+    SpinDragonPaths paths;
 
 private:
     void eatToken(QString t);
@@ -58,13 +61,13 @@ private:
     void getNewLine();
     void getNumber();
     void getLiteral();
+    void getArrayIndex();
     void getExpression();
 
     void getString();
     void getParameter();
     void getParameters();
 
-    void getConstant();
     void getConstantLine();
 
     void getConstantArray();
@@ -82,6 +85,9 @@ private:
     void getConstantPrimaryExpression();
 
 
+    void getObjectLine();
+
+
     void getFloat();
     void getDecimal();
     void getHexadecimal();
@@ -94,7 +100,7 @@ private:
 public:
     explicit SpinDragon();
     ~SpinDragon();
-    bool parse(QString text, QString filename = QString());
+    bool parse(QString text, QString filename = QString(), const SpinDragonPaths & paths = SpinDragonPaths());
 };
 
 
