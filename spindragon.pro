@@ -12,10 +12,14 @@ HEADERS += \
     errors.h \
     tokens.h \
     paths.h \
+    buffer.h \
+    ast.h \
 
 SOURCES += \
     main.cpp \
     spindragon.cpp \
     errors.cpp \
     paths.cpp \
+    buffer.cpp \
+    ast.cpp \
 

@@ -17,75 +17,24 @@ SpinDragon::~SpinDragon()
 
 void SpinDragon::reset()
 {
-    _index = 0;
-    _lineindex = 0;
-    _text = "";
-    _linenum = 1;
-    _colnum = 1;
+    tok.reset();
 
     _block = NO_BLOCK;
 }
 
-void SpinDragon::eatToken(QString t)
+void SpinDragon::print(QString s, QString s2)
 {
-    _text = t;
-    _index += t.size();
-    _colnum = _index - _lineindex;
-}
-
-bool SpinDragon::atEnd()
-{
-    return (_index >= _in.size());
-}
-
-bool SpinDragon::match(QString pattern)
-{
-    QRegularExpression re(pattern, QRegularExpression::DotMatchesEverythingOption
-                                 | QRegularExpression::CaseInsensitiveOption);
-
-    QRegularExpressionMatch m = re.match(_in, _index);
-
-    if (m.hasMatch() && m.capturedStart() == _index)
-    {
-        eatToken(m.captured());
-        return true;
-    }
-    else
-    {
-        throw ExpectedError(pattern);
-        return false;
-    }
-}
-
-bool SpinDragon::look(QString pattern)
-{
-    QRegularExpression re(pattern, QRegularExpression::DotMatchesEverythingOption
-                                 | QRegularExpression::CaseInsensitiveOption);
-
-    QRegularExpressionMatch m = re.match(_in, _index);
-
-    return (m.hasMatch() && m.capturedStart() == _index);
-}
-
-void SpinDragon::print(QString s)
-{
-    printf(" %s '%s'", qPrintable(s), qPrintable(_text));
+    printf(" %s '%s'", qPrintable(s), qPrintable(s2));
     fflush(stdout);
 }
 
-void SpinDragon::label(QString s)
-{
-    print(s);
-    eatSpace();
-}
-
-
 void SpinDragon::getQuaternary()
 {
-    match("%%");
+    tok.match("%%");
+    QString s;
     try
     {
-        match(allowUnderscore("0-3"));
+        s = tok.match(allowUnderscore("0-3"));
     }
     catch (Error & e)
     {
@@ -93,15 +42,16 @@ void SpinDragon::getQuaternary()
     }
 
     if (isIdentifier()) throw Error("Not a valid quaternary number (0-3)");
-    print("QUAD");
+    print("QUAD", s);
 }
 
 void SpinDragon::getBinary()
 {
-    match("%");
+    tok.match("%");
+    QString s;
     try
     {
-        match(allowUnderscore("0-1"));
+        s = tok.match(allowUnderscore("0-1"));
     }
     catch (Error & e)
     {
@@ -109,60 +59,63 @@ void SpinDragon::getBinary()
     }
 
     if (isIdentifier()) throw Error("Not a valid binary number (0-1)");
-    print("BIN");
+    print("BIN", s);
 }
 
 void SpinDragon::getHexadecimal()
 {
-    match("\\$");
+    tok.match("\\$");
+    QString s;
     try
     {
-        match(allowUnderscore("0-9a-fA-F"));
+        s = tok.match(allowUnderscore("0-9a-fA-F"));
     }
     catch (Error & e)
     {
         throw Error("Not a valid hexadecimal number (0-F)");
     }
 
-    print("HEX");
-    if (look("[g-zG-Z]")) throw Error("Not a valid hexadecimal number (0-F)");
+    if (tok.look("[g-zG-Z]")) throw Error("Not a valid hexadecimal number (0-F)");
+    print("HEX", s);
 }
 
 void SpinDragon::getFloat()
 {
+    QString s;
     try
     {
-        match(allowUnderscore("0-9")+"\\."+allowUnderscore("0-9"));
+        s = tok.match(allowUnderscore("0-9")+"\\."+allowUnderscore("0-9"));
     }
     catch (Error & e)
     {
         throw Error("Not a valid floating point number (0.0)");
     }
 
-    print("FLOAT");
     if (isIdentifier()) throw Error("Not a valid floating point number (0.0)");
+    print("FLOAT", s);
 }
 
 void SpinDragon::getDecimal()
 {
+    QString s;
     try
     {
-        match(allowUnderscore("0-9"));
+        s = tok.match(allowUnderscore("0-9"));
     }
     catch (Error & e)
     {
         throw Error("Not a valid decimal number (0-9)");
     }
 
-    print("DEC");
     if (isIdentifier()) throw Error("Not a valid decimal number (0-9)");
+    print("DEC", s);
 }
 
 void SpinDragon::getLiteral()
 {
-    match("#");
+    tok.match("#");
     getNumber();
-    eatSpace();
+    tok.eatSpace();
 }
 
 void SpinDragon::getArrayIndex()
@@ -176,20 +129,20 @@ void SpinDragon::getFunction()
 {
     getIdentifier();
 
-    if (look("\\."))
+    if (tok.look("\\."))
     {
-        match("\\.");
-        print("DOT");
+        QString s = tok.match("\\.");
+        print("DOT", s);
 
-        if (look("[_a-zA-Z]"))
+        if (tok.look("[_a-zA-Z]"))
             getIdentifier();
     }
     else
     {
-        eatSpace();
+        tok.eatSpace();
     }
 
-    if (look("\\("))
+    if (tok.look("\\("))
     {
         getParameters();
     }
@@ -197,8 +150,15 @@ void SpinDragon::getFunction()
 
 void SpinDragon::getIdentifier()
 {
-    match("[_a-zA-Z][a-zA-Z_0-9]*");
-    print("IDENT");
+    try
+    {
+        QString s = tok.match("[_a-zA-Z][a-zA-Z_0-9]*");
+        print("IDENT", s);
+    }
+    catch (Error & e)
+    {
+        throw Error("Expected an identifer (e.g. 'foobar', 'foo_bar')");
+    }
 }
 
 void SpinDragon::getParameter()
@@ -208,10 +168,10 @@ void SpinDragon::getParameter()
 
     getExpression();
 
-    if (look(","))
+    if (tok.look(","))
     {
-        match(",");
-        eatSpace();
+        tok.match(",");
+        tok.eatSpace();
 
         getParameter();
     }
@@ -222,33 +182,20 @@ void SpinDragon::getParameters()
     printf(" PARAMS ");
     fflush(stdout);
 
-    match("\\(");
+    tok.match("\\(");
     getParameter();
-    match("\\)");
+    tok.match("\\)");
 }
-
-
 
 void SpinDragon::getOperator()
 {
-    match(":|=| |\\+");
-    print("OP");
-}
-
-void SpinDragon::getNewLine()
-{
-    match("\n");
-
-    _linenum++;
-    _lineindex = _index;
-
-    printf(" NL\n");
-    fflush(stdout);
+    QString s = tok.match(":|=| |\\+");
+    print("OP", s);
 }
 
 void SpinDragon::getIndent()
 {
-    int indent = eatSpace();
+    int indent = tok.eatSpace();
 
     for (int i = 0; i < indent; i++)
         printf(".");
@@ -256,33 +203,26 @@ void SpinDragon::getIndent()
     fflush(stdout);
 }
 
-int SpinDragon::eatSpace()
-{
-    match("[ \t]*");
-    return _text.size();
-}
-
 void SpinDragon::getString()
 {
-    match("\"");
+    tok.match("\"");
 
     QString s; 
 
-    while (!atEnd())
+    while (!tok.atEnd())
     {
-        if (look("\""))
+        if (tok.look("\""))
         {
-            match("\"");
+            tok.match("\"");
             break;
         }
-        else if (look("\n") || atEnd())
+        else if (tok.look("\n") || tok.atEnd())
         {
             throw ExpectedError("string");
         }
-        else if (look("."))
+        else if (tok.look("."))
         {
-            match(".");
-            s += _text;
+            s += tok.match(".");
         }
         else
         {
@@ -290,10 +230,8 @@ void SpinDragon::getString()
         }
     }
 
-    _text = s;
-
-    print("STRING");
-    eatSpace();
+    print("STRING", s);
+    tok.eatSpace();
 }
 
 QString SpinDragon::allowUnderscore(QString s)
@@ -303,19 +241,19 @@ QString SpinDragon::allowUnderscore(QString s)
 
 void SpinDragon::getNumber()
 {
-    if (look(allowUnderscore("0-9")+"\\."+allowUnderscore("0-9")))
+    if (tok.look(allowUnderscore("0-9")+"\\."+allowUnderscore("0-9")))
         getFloat();
 
-    else if (look("[0-9]"))
+    else if (tok.look("[0-9]"))
         getDecimal();
 
-    else if (look("\\$"))
+    else if (tok.look("\\$"))
         getHexadecimal();
 
-    else if (look("%%"))
+    else if (tok.look("%%"))
         getQuaternary();
 
-    else if (look("%"))
+    else if (tok.look("%"))
         getBinary();
 
     else throw ExpectedError("number");
@@ -324,17 +262,17 @@ void SpinDragon::getNumber()
 
 bool SpinDragon::isIdentifier()
 {
-    return look("[_a-zA-Z]");
+    return tok.look("[_a-zA-Z]");
 }
 
 bool SpinDragon::isNumber()
 {
-    return look("[0-9]|\\$|%|%%");
+    return tok.look("[0-9]|\\$|%|%%");
 }
 
 bool SpinDragon::isString()
 {
-    return look("\"");
+    return tok.look("\"");
 }
 
 void SpinDragon::getExpression()
@@ -345,29 +283,29 @@ void SpinDragon::getExpression()
     else if (isNumber())
         getNumber();
 
-    else if (look(":|=|\\+"))
+    else if (tok.look(":|=|\\+"))
         getOperator();
 
     else if (isString())
         getString();
 
-    else if (look("\n"))
-        getNewLine();
+    else if (tok.look("\n"))
+        tok.getNewLine();
 
     else throw ExpectedError("expression");
 }
 
 void SpinDragon::get(QString s)
 {
-    match(s);
-    print("OP");
-    eatSpace();
+    tok.match(s);
+    print("OP", s);
+    tok.eatSpace();
 }
 
 
 void SpinDragon::getConstantFactor()
 {
-    if (look("\\("))
+    if (tok.look("\\("))
     {
         get("\\(");
         getConstantExpression();
@@ -396,12 +334,12 @@ void SpinDragon::getConstantTerm()
 {
     getConstantFactor();
 
-    while (look("\\*|/"))
+    while (tok.look("\\*|/"))
     {
-        if (look("\\*"))
+        if (tok.look("\\*"))
             getConstantMultiply();
 
-        else if (look("/"))
+        else if (tok.look("/"))
             getConstantDivide();
     }
 }
@@ -420,15 +358,15 @@ void SpinDragon::getConstantAdd()
 
 void SpinDragon::getConstantExpression()
 {
-    if (!look("\\+|-"))
+    if (!tok.look("\\+|-"))
         getConstantTerm();
 
-    while (look("\\+|-"))
+    while (tok.look("\\+|-"))
     {
-        if (look("\\+"))
+        if (tok.look("\\+"))
             getConstantAdd();
 
-        else if (look("-"))
+        else if (tok.look("-"))
             getConstantSubtract();
     }
 }
@@ -443,13 +381,13 @@ void SpinDragon::getConstantPrimaryExpression()
 
     else throw ExpectedError("primary expression");
 
-    eatSpace();
+    tok.eatSpace();
 }
 
 void SpinDragon::getConstantIdentifier()
 {
     getIdentifier();
-    eatSpace();
+    tok.eatSpace();
 }
 
 void SpinDragon::getConstantAssignment()
@@ -462,9 +400,9 @@ void SpinDragon::getConstantAssignment()
 void SpinDragon::getConstantArrayItem()
 {
     getIdentifier();
-    eatSpace();
+    tok.eatSpace();
 
-    if (look("\\["))
+    if (tok.look("\\["))
     {
         get("\\[");
         getConstantPrimaryExpression();
@@ -476,7 +414,7 @@ void SpinDragon::getConstantArray()
 {
     getLiteral();
 
-    while (look(","))
+    while (tok.look(","))
     {
         get(",");
         getConstantArrayItem();
@@ -485,46 +423,75 @@ void SpinDragon::getConstantArray()
 
 void SpinDragon::getConstantLine()
 {
-
     getIndent();
 
     if (isIdentifier())
         getConstantAssignment();
 
-    else if (look("#"))
+    else if (tok.look("#"))
         getConstantArray();
 
     else throw ExpectedError("constant assignment (e.g. VAR = 123)");
 }
 
+void SpinDragon::getObjectString()
+{
+    tok.match("\"");
+
+    QString s; 
+
+    while (!tok.atEnd())
+    {
+        if (tok.look("\""))
+        {
+            tok.match("\"");
+            break;
+        }
+        else if (tok.look("\n") || tok.atEnd())
+        {
+            throw Error("Invalid character in object name (valid characters: a-zA-Z0-9._-)");
+        }
+        else if (tok.look("[_a-zA-Z0-9.-]"))
+        {
+            s += tok.match("[_a-zA-Z0-9.-]+");
+        }
+        else
+        {
+            throw Error("Invalid character in object name (valid characters: a-zA-Z0-9._-)");
+        }
+    }
+
+    print("OBJ", s);
+}
+
 
 void SpinDragon::getObjectLine()
 {
-    eatSpace();
+    tok.eatSpace();
 
     getIdentifier();
-    eatSpace();
+    tok.eatSpace();
 
-    if (look("\\["))
+    if (tok.look("\\["))
         getArrayIndex();
 
     get(":");
-    getString();
+    getObjectString();
 }
 
 
 bool SpinDragon::isEmptyLine()
 {
-    return look("[ \t]*\n");
+    return tok.look("[ \t]*\n");
 }
 
 void SpinDragon::getNewBlock(QString pattern, Block block)
 {
-    match(pattern);
-    print("NEWBLOCK");
-    eatSpace();
+    QString s = tok.match(pattern);
+    print("NEWBLOCK", s);
+    tok.eatSpace();
     _block = block;
-    if (look("[^\n]")) 
+    if (tok.look("[^\n]")) 
     {
         throw Error(QString("%1 blocks must be on a line by themselves")
                 .arg(pattern.toUpper()));
@@ -533,14 +500,14 @@ void SpinDragon::getNewBlock(QString pattern, Block block)
 
 void SpinDragon::getNewFunctionBlock(QString pattern, Block block)
 {
-    match(pattern);
-    print("NEWBLOCK");
-    eatSpace();
+    QString s = tok.match(pattern);
+    print("NEWBLOCK", s);
+    tok.eatSpace();
     _block = block;
 
     getFunction();
 
-    if (look("[^\n]")) 
+    if (tok.look("[^\n]")) 
     {
         throw Error(QString("%1 blocks should contain only a function declaration (e.g. 'PUB foo(bar, baz)'")
                 .arg(pattern.toUpper()));
@@ -549,28 +516,28 @@ void SpinDragon::getNewFunctionBlock(QString pattern, Block block)
 
 void SpinDragon::getLine()
 {
-    printf("%4i| ", _linenum);
+    printf("%4i| ", tok.line());
     fflush(stdout);
 
     if (isEmptyLine())
-        eatSpace();
+        tok.eatSpace();
 
-    else if (look("con"))
+    else if (tok.look("con"))
         getNewBlock("con", CON_BLOCK);
 
-    else if (look("var"))
+    else if (tok.look("var"))
         getNewBlock("var", VAR_BLOCK);
 
-    else if (look("obj"))
+    else if (tok.look("obj"))
         getNewBlock("obj", OBJ_BLOCK);
 
-    else if (look("dat"))
+    else if (tok.look("dat"))
         getNewBlock("dat", DAT_BLOCK);
 
-    else if (look("pub"))
+    else if (tok.look("pub"))
         getNewFunctionBlock("pub", DAT_BLOCK);
 
-    else if (look("pri"))
+    else if (tok.look("pri"))
         getNewFunctionBlock("pri", DAT_BLOCK);
 
     else
@@ -605,22 +572,26 @@ void SpinDragon::getProgram()
 {
     getLine();
 
-    while (!atEnd())
+    while (!tok.atEnd())
     {
-        getNewLine();
-        if (atEnd())
+        tok.getNewLine();
+        if (tok.atEnd())
             return;
         getLine();
     }
 }
 
 
-bool SpinDragon::parse(QString text, QString filename, const SpinDragonPaths & paths)
+bool SpinDragon::parse(QString text, QString filename, SpinDragonPaths paths)
 {
     reset();
-    _in = text;
+
+    tok = SpinDragonBuffer(text, QFileInfo(filename).fileName());
 
     _block = NO_BLOCK;
+
+    qDebug() << paths.listFiles();
+    qDebug() << paths.listPaths();
 
     try
     {
@@ -628,18 +599,23 @@ bool SpinDragon::parse(QString text, QString filename, const SpinDragonPaths & p
     }
     catch (Error & e)
     {
-        fprintf(stderr, "%s\n", qPrintable(QString("\n\033[1;31m%1(%2,%3) Error:\033[0m %4")
-                    .arg(QFileInfo(filename).fileName())
-                    .arg(_linenum)
-                    .arg(_colnum)
-                    .arg(e.what())
-                    ));
-
-        fprintf(stderr,"\n%s\n", qPrintable(_in.mid(_lineindex, _in.indexOf("\n",_lineindex) - _lineindex)));
-        fprintf(stderr,"%s\033[1;37m^\033[0m\n", qPrintable(QString(_colnum, ' ')));
-        fflush(stderr);
+        error(e.what());
         return false;
     }
 
     return true;
+}
+
+void SpinDragon::error(QString s)
+{
+    fprintf(stderr, "%s\n", qPrintable(QString("\n\033[1;31m%1(%2,%3) Error:\033[0m %4")
+                .arg(tok.name())
+                .arg(tok.line())
+                .arg(tok.col())
+                .arg(s)
+                ));
+
+    fprintf(stderr,"\n%s\n", qPrintable(tok.lastLine()));
+    fprintf(stderr,"%s\033[1;37m^\033[0m\n", qPrintable(QString(tok.col(), ' ')));
+    fflush(stderr);
 }

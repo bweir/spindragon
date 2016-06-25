@@ -21,12 +21,13 @@ class SpinDragonPaths : public QObject
 
 public:
     explicit SpinDragonPaths();
-    explicit SpinDragonPaths(const SpinDragonPaths & other);
+    SpinDragonPaths(const SpinDragonPaths & other);
     ~SpinDragonPaths();
 
     void clear();
     void clearFiles();
     void clearPaths();
+    bool setFile(QString filename);
     bool addPath(QString pathname);
     QString findObject(QString filename);
     QString openFile(QString filename);

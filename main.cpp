@@ -39,9 +39,6 @@ int main(int argc, char *argv[])
 //    paths.findObject("LameLCD");
 //    paths.findObject("lamelcd");
 
-    qDebug() << "FILES" << paths.listFiles();
-    qDebug() << "PATHS" << paths.listPaths();
-
     SpinDragon spind;
 
     bool success = spind.parse(text, filename, paths);

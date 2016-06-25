@@ -1,41 +1,23 @@
 #pragma once
 
 #include <QString>
-#include <QRegularExpression>
 
 #include "tokens.h"
 #include "paths.h"
-
-class Production;
-
-class Production
-{
-public:
-    virtual ~Production();
-};
-
+#include "buffer.h"
 
 class SpinDragon : public QObject
 {
     Q_OBJECT
 
-    int     _linenum;
-    int     _colnum;
-    int     _lineindex;
-    int     _index;
-    QString _in;
-    QString _text;
+    QString _filename;
 
     Block   _block;
 
     SpinDragonPaths paths;
+    SpinDragonBuffer tok;
 
 private:
-    void eatToken(QString t);
-    bool match(QString pattern);
-    bool look(QString pattern);
-    void reset();
-    bool atEnd();
 
     QString allowUnderscore(QString s);
 
@@ -46,8 +28,7 @@ private:
 
     void getIndent();
     void get(QString s);
-    void print(QString s);
-    int eatSpace();
+    void print(QString s, QString s2);
 
     void getProgram();
     void getLine();
@@ -58,7 +39,6 @@ private:
     void getFunction();
     void getIdentifier();
     void getOperator();
-    void getNewLine();
     void getNumber();
     void getLiteral();
     void getArrayIndex();
@@ -85,6 +65,7 @@ private:
     void getConstantPrimaryExpression();
 
 
+    void getObjectString();
     void getObjectLine();
 
 
@@ -94,14 +75,14 @@ private:
     void getBinary();
     void getQuaternary();
 
-    void label(QString s);
+    void error(QString s);
 
 
 public:
     explicit SpinDragon();
     ~SpinDragon();
-    bool parse(QString text, QString filename = QString(), const SpinDragonPaths & paths = SpinDragonPaths());
-};
+    bool parse(QString text, QString filename = QString(), SpinDragonPaths paths = SpinDragonPaths());
+    void reset(); };
 
 
 
