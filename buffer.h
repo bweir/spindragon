@@ -2,7 +2,7 @@
 
 #include <QString>
 
-class SpinDragonBuffer
+class Buffer
 {
     int     _linenum;
     int     _colnum;
@@ -15,10 +15,10 @@ class SpinDragonBuffer
     QString _name;
 
 public:
-    SpinDragonBuffer(QString text = QString(), QString name = QString());
-    SpinDragonBuffer(const SpinDragonBuffer & other);
-    SpinDragonBuffer operator=(const SpinDragonBuffer & other);
-    ~SpinDragonBuffer();
+    Buffer(QString text = QString(), QString name = QString());
+    Buffer(const Buffer & other);
+    Buffer operator=(const Buffer & other);
+    ~Buffer();
     void reset();
     void eatToken(QString t);
     int eatSpace();
@@ -26,6 +26,11 @@ public:
     bool look(QString pattern);
     bool atEnd();
     void getNewLine();
+
+    bool isEmptyLine();
+    bool isIdentifier();
+    bool isNumber();
+    bool isString();
 
     QString name();
     int pos();

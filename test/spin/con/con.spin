@@ -6,7 +6,11 @@ CON
     chickenmode =   (   2    +    5    )    /    3
 baconmode=(2+5)/3
 
-    #$0, bacon [5444], chicken, cats
+    #$01, bacon [5444], chicken, cats
+
+    cat = 1.5
+    cat1 = 1.2.3
+    cat2 = 40f
 
 CON
 

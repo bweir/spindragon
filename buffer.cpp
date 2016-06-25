@@ -5,14 +5,14 @@
 
 #include <QRegularExpression>
 
-SpinDragonBuffer::SpinDragonBuffer(QString text, QString name)
+Buffer::Buffer(QString text, QString name)
 {
     reset();
     _in = text;
     _name = name;
 }
 
-SpinDragonBuffer::SpinDragonBuffer(const SpinDragonBuffer & other)
+Buffer::Buffer(const Buffer & other)
 {
     _name       = other._name;
     _index      = other._index;
@@ -25,7 +25,7 @@ SpinDragonBuffer::SpinDragonBuffer(const SpinDragonBuffer & other)
     _name       = other._name;
 }
 
-SpinDragonBuffer SpinDragonBuffer::operator=(const SpinDragonBuffer & other)
+Buffer Buffer::operator=(const Buffer & other)
 {
     _index      = other._index;;
     _lineindex  = other._lineindex;
@@ -39,12 +39,12 @@ SpinDragonBuffer SpinDragonBuffer::operator=(const SpinDragonBuffer & other)
     return *this;
 }
 
-SpinDragonBuffer::~SpinDragonBuffer()
+Buffer::~Buffer()
 {
 
 }
 
-void SpinDragonBuffer::reset()
+void Buffer::reset()
 {
     _index = 0;
     _lineindex = 0;
@@ -55,19 +55,19 @@ void SpinDragonBuffer::reset()
     _last = "";
 }
 
-void SpinDragonBuffer::eatToken(QString t)
+void Buffer::eatToken(QString t)
 {
     _last = t;
     _index += t.size();
     _colnum = _index - _lineindex;
 }
 
-bool SpinDragonBuffer::atEnd()
+bool Buffer::atEnd()
 {
     return (_index >= _in.size());
 }
 
-QString SpinDragonBuffer::match(QString pattern)
+QString Buffer::match(QString pattern)
 {
     QRegularExpression re(pattern, QRegularExpression::DotMatchesEverythingOption
                                  | QRegularExpression::CaseInsensitiveOption);
@@ -85,7 +85,7 @@ QString SpinDragonBuffer::match(QString pattern)
     }
 }
 
-bool SpinDragonBuffer::look(QString pattern)
+bool Buffer::look(QString pattern)
 {
     QRegularExpression re(pattern, QRegularExpression::DotMatchesEverythingOption
                                  | QRegularExpression::CaseInsensitiveOption);
@@ -95,13 +95,13 @@ bool SpinDragonBuffer::look(QString pattern)
     return (m.hasMatch() && m.capturedStart() == _index);
 }
 
-int SpinDragonBuffer::eatSpace()
+int Buffer::eatSpace()
 {
     match("[ \t]*");
     return _last.size();
 }
 
-void SpinDragonBuffer::getNewLine()
+void Buffer::getNewLine()
 {
     match("\n");
 
@@ -112,32 +112,52 @@ void SpinDragonBuffer::getNewLine()
     fflush(stdout);
 }
 
-QString SpinDragonBuffer::last()
+bool Buffer::isIdentifier()
+{
+    return look("[_a-zA-Z]");
+}
+
+bool Buffer::isNumber()
+{
+    return look("[0-9]|\\$|%|%%");
+}
+
+bool Buffer::isString()
+{
+    return look("\"");
+}
+
+bool Buffer::isEmptyLine()
+{
+    return look("[ \t]*\n");
+}
+
+QString Buffer::last()
 {
     return _last;
 }
 
-QString SpinDragonBuffer::name()
+QString Buffer::name()
 {
     return _name;
 }
 
-int SpinDragonBuffer::col()
+int Buffer::col()
 {
     return _colnum;
 }
 
-int SpinDragonBuffer::line()
+int Buffer::line()
 {
     return _linenum;
 }
 
-int SpinDragonBuffer::pos()
+int Buffer::pos()
 {
     return _index;
 }
 
-QString SpinDragonBuffer::lastLine()
+QString Buffer::lastLine()
 {
     return _in.mid(_lineindex, _in.indexOf("\n",_lineindex) - _lineindex);
 }

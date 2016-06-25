@@ -15,16 +15,11 @@ class SpinDragon : public QObject
     Block   _block;
 
     SpinDragonPaths paths;
-    SpinDragonBuffer tok;
+    Buffer tok;
 
 private:
 
     QString allowUnderscore(QString s);
-
-    bool isEmptyLine();
-    bool isIdentifier();
-    bool isNumber();
-    bool isString();
 
     void getIndent();
     void get(QString s);
@@ -68,15 +63,7 @@ private:
     void getObjectString();
     void getObjectLine();
 
-
-    void getFloat();
-    void getDecimal();
-    void getHexadecimal();
-    void getBinary();
-    void getQuaternary();
-
     void error(QString s);
-
 
 public:
     explicit SpinDragon();
