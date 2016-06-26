@@ -5,6 +5,7 @@
 
 #include "buffer.h"
 #include "errors.h"
+#include "match.h"
 
 class Node
 {
@@ -12,6 +13,7 @@ class Node
 
 protected:
     QString _name, _pattern, _token;
+    Match _match;
 
 public:
     Node(Buffer & in);

@@ -1,7 +1,5 @@
 #include "errors.h"
 
-#include <QHash>
-
 const char* Error::what() const throw()
 {
     return strdup(qPrintable(_message));

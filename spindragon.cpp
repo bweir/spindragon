@@ -49,8 +49,8 @@ void SpinDragon::getFunction()
 
     if (tok.look("\\."))
     {
-        QString s = tok.match("\\.");
-        print("DOT", s);
+        Match m = tok.match("\\.");
+        print("DOT", m.text());
 
         if (tok.look("[_a-zA-Z]"))
             getIdentifier();
@@ -99,8 +99,8 @@ void SpinDragon::getParameters()
 
 void SpinDragon::getOperator()
 {
-    QString s = tok.match(":|=| |\\+");
-    print("OP", s);
+    Match m = tok.match(":|=| |\\+");
+    print("OP", m.text());
 }
 
 void SpinDragon::getIndent()
@@ -132,7 +132,7 @@ void SpinDragon::getString()
         }
         else if (tok.look("."))
         {
-            s += tok.match(".");
+            s += tok.match(".").text();
         }
         else
         {
@@ -347,7 +347,7 @@ void SpinDragon::getObjectString()
         }
         else if (tok.look("[_a-zA-Z0-9.-]"))
         {
-            s += tok.match("[_a-zA-Z0-9.-]+");
+            s += tok.match("[_a-zA-Z0-9.-]+").text();
         }
         else
         {
@@ -376,8 +376,8 @@ void SpinDragon::getObjectLine()
 
 void SpinDragon::getNewBlock(QString pattern, Block block)
 {
-    QString s = tok.match(pattern);
-    print("NEWBLOCK", s);
+    Match m = tok.match(pattern);
+    print("NEWBLOCK", m.text());
     tok.eatSpace();
     _block = block;
     if (tok.look("[^\n]")) 
@@ -389,8 +389,8 @@ void SpinDragon::getNewBlock(QString pattern, Block block)
 
 void SpinDragon::getNewFunctionBlock(QString pattern, Block block)
 {
-    QString s = tok.match(pattern);
-    print("NEWBLOCK", s);
+    Match m = tok.match(pattern);
+    print("NEWBLOCK", m.text());
     tok.eatSpace();
     _block = block;
 
@@ -488,23 +488,29 @@ bool SpinDragon::parse(QString text, QString filename, SpinDragonPaths paths)
     }
     catch (Error & e)
     {
-        error(e.what());
+        error(tok, e.what());
         return false;
     }
 
     return true;
 }
 
-void SpinDragon::error(QString s)
+
+void SpinDragon::error(Buffer & in, QString text)
+{
+    error(in.lastMatch(), text);
+}
+
+void SpinDragon::error(Match m, QString text)
 {
     fprintf(stderr, "%s\n", qPrintable(QString("\n\033[1;31m%1(%2,%3) Error:\033[0m %4")
-                .arg(tok.name())
-                .arg(tok.line())
-                .arg(tok.col())
-                .arg(s)
+                .arg(m.file())
+                .arg(m.line())
+                .arg(m.col())
+                .arg(text)
                 ));
 
-    fprintf(stderr,"\n%s\n", qPrintable(tok.lastLine()));
-    fprintf(stderr,"%s\033[1;37m^\033[0m\n", qPrintable(QString(tok.col(), ' ')));
+    fprintf(stderr,"\n%s\n", qPrintable(m.lineText()));
+    fprintf(stderr,"%s\033[1;37m^\033[0m\n", qPrintable(QString(m.col(), ' ')));
     fflush(stderr);
 }

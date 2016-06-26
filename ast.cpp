@@ -17,6 +17,7 @@ Node::~Node()
 void Node::print()
 {
     printf("%s '%s' ", qPrintable(_name), qPrintable(_token));
+    fflush(stdout);
 }
 
 QString Node::token()
@@ -33,7 +34,7 @@ Identifier::Identifier(Buffer & in)
 
     try
     {
-        _token = in.match("[_a-zA-Z][a-zA-Z_0-9]*");
+        _token = in.match("[_a-zA-Z][a-zA-Z_0-9]*").text();
     }
     catch (Error & e)
     {
@@ -63,7 +64,7 @@ void Number::parse(Buffer & in)
 {
     try
     {
-        _token = in.match(_pattern);
+        _token = in.match(_pattern).text();
     }
     catch (Error & e)
     {

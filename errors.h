@@ -22,4 +22,3 @@ public:
     virtual ~ExpectedError() throw () {}
 };
 
-

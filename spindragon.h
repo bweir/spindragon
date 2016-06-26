@@ -63,13 +63,15 @@ private:
     void getObjectString();
     void getObjectLine();
 
-    void error(QString s);
+    void error(Buffer & in, QString text);
+    void error(Match m, QString text);
 
 public:
     explicit SpinDragon();
     ~SpinDragon();
     bool parse(QString text, QString filename = QString(), SpinDragonPaths paths = SpinDragonPaths());
-    void reset(); };
+    void reset();
+};
 
 
 

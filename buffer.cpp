@@ -52,14 +52,14 @@ void Buffer::reset()
     _colnum = 1;
 
     _in = "";
-    _last = "";
+    _last = Match();
 }
 
 void Buffer::eatToken(QString t)
 {
-    _last = t;
     _index += t.size();
     _colnum = _index - _lineindex;
+    _last = Match(line(), col(), name(), t, lastLine());
 }
 
 bool Buffer::atEnd()
@@ -67,7 +67,7 @@ bool Buffer::atEnd()
     return (_index >= _in.size());
 }
 
-QString Buffer::match(QString pattern)
+Match Buffer::match(QString pattern)
 {
     QRegularExpression re(pattern, QRegularExpression::DotMatchesEverythingOption
                                  | QRegularExpression::CaseInsensitiveOption);
@@ -98,7 +98,7 @@ bool Buffer::look(QString pattern)
 int Buffer::eatSpace()
 {
     match("[ \t]*");
-    return _last.size();
+    return _last.text().size();
 }
 
 void Buffer::getNewLine()
@@ -134,7 +134,7 @@ bool Buffer::isEmptyLine()
 
 QString Buffer::last()
 {
-    return _last;
+    return _last.text();
 }
 
 QString Buffer::name()
@@ -160,4 +160,9 @@ int Buffer::pos()
 QString Buffer::lastLine()
 {
     return _in.mid(_lineindex, _in.indexOf("\n",_lineindex) - _lineindex);
+}
+
+Match Buffer::lastMatch()
+{
+    return _last;
 }

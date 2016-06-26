@@ -14,6 +14,7 @@ HEADERS += \
     paths.h \
     buffer.h \
     ast.h \
+    match.h \
 
 SOURCES += \
     main.cpp \
@@ -22,4 +23,5 @@ SOURCES += \
     paths.cpp \
     buffer.cpp \
     ast.cpp \
+    match.cpp \
 

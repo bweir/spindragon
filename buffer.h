@@ -2,6 +2,8 @@
 
 #include <QString>
 
+#include "match.h"
+
 class Buffer
 {
     int     _linenum;
@@ -11,8 +13,9 @@ class Buffer
     int     _index;
 
     QString _in;
-    QString _last;
     QString _name;
+
+    Match _last;
 
 public:
     Buffer(QString text = QString(), QString name = QString());
@@ -22,7 +25,7 @@ public:
     void reset();
     void eatToken(QString t);
     int eatSpace();
-    QString match(QString pattern);
+    Match match(QString pattern);
     bool look(QString pattern);
     bool atEnd();
     void getNewLine();
@@ -36,6 +39,7 @@ public:
     int pos();
     int line();
     int col();
+    Match lastMatch();
     QString last();
     QString lastLine();
 };
