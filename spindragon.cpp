@@ -1,6 +1,5 @@
 #include "spindragon.h"
 #include "errors.h"
-#include "ast.h"
 
 #include <QFileInfo>
 #include <QDebug>
@@ -29,10 +28,105 @@ void SpinDragon::print(QString s, QString s2)
     fflush(stdout);
 }
 
+Node * SpinDragon::getQuaternary()
+{
+    tok.match("%%");
+    Match m;
+    try
+    {
+        m = tok.match(allowUnderscore("0-3"));
+    }
+    catch (Error & e)
+    {
+        throw Error("Not a valid quaternary number (0-3)");
+    }
+
+    if (tok.isIdentifier())
+        throw Error("Quaternary numbers may not contain letters.");
+
+    return new QuaternaryNode(m);
+}
+
+Node * SpinDragon::getBinary()
+{
+    tok.match("%");
+    Match m;
+    try
+    {
+        m = tok.match(allowUnderscore("0-1"));
+    }
+    catch (Error & e)
+    {
+        throw Error("Not a valid binary number (0-1)");
+    }
+
+    if (tok.isIdentifier())
+        throw Error("Binary numbers may not contain letters.");
+
+    return new BinaryNode(m);
+}
+
+Node * SpinDragon::getHexadecimal()
+{
+    tok.match("\\$");
+    Match m;
+    try
+    {
+        m = tok.match(allowUnderscore("0-9a-fA-F"));
+    }
+    catch (Error & e)
+    {
+        throw Error("Not a valid hexadecimal number (0-F)");
+    }
+
+    if (tok.look("[g-zG-Z]"))
+        throw Error("Not a valid hexadecimal number (0-F)");
+
+    return new HexadecimalNode(m);
+}
+
+Node * SpinDragon::getFloat()
+{
+    Match m;
+    try
+    {
+        m = tok.match(allowUnderscore("0-9")+"\\."+allowUnderscore("0-9"));
+    }
+    catch (Error & e)
+    {
+        throw Error("Not a valid floating point number (0.0)");
+    }
+
+    if (tok.isIdentifier())
+        throw Error("Floating point numbers may not contain letters.");
+    else if (tok.look("\\."))
+        throw Error("Floating point numbers may only contain one decimal point.");
+
+    return new FloatNode(m);
+}
+
+Node * SpinDragon::getDecimal()
+{
+    Match m;
+    try
+    {
+        m = tok.match(allowUnderscore("0-9"));
+    }
+    catch (Error & e)
+    {
+        throw Error("Not a valid decimal number (0-9)");
+    }
+
+    if (tok.isIdentifier())
+        throw Error("Decimal numbers may not contain letters.");
+
+    return new DecimalNode(m);
+}
+
 void SpinDragon::getLiteral()
 {
     tok.match("#");
-    getNumber();
+    getNumber()->print();
     tok.eatSpace();
 }
 
@@ -68,7 +162,15 @@ void SpinDragon::getFunction()
 
 void SpinDragon::getIdentifier()
 {
-    Identifier ident(tok);
+    try
+    {
+        Match m = tok.match("[_a-zA-Z][a-zA-Z_0-9]*");
+        print("IDENT", m.text());
+    }
+    catch (Error & e)
+    {
+        throw Error("Expected an identifer (e.g. 'foobar', 'foo_bar')");
+    }
 }
 
 void SpinDragon::getParameter()
@@ -149,22 +251,22 @@ QString SpinDragon::allowUnderscore(QString s)
     return  "["+s+"]+(["+s+"_]+["+s+"]|["+s+"]*)";
 }
 
-void SpinDragon::getNumber()
+Node * SpinDragon::getNumber()
 {
     if (tok.look(allowUnderscore("0-9")+"\\."+allowUnderscore("0-9")))
-        Float flt(tok);
+        return getFloat();
 
     else if (tok.look("[0-9]"))
-        Decimal dec(tok);
+        return getDecimal();
 
     else if (tok.look("\\$"))
-        Hexadecimal hex(tok);
+        return getHexadecimal();
 
     else if (tok.look("%%"))
-        Quaternary quat(tok);
+        return getQuaternary();
 
     else if (tok.look("%"))
-        Binary bin(tok);
+        return getBinary();
 
     else throw ExpectedError("number");
 }
@@ -175,7 +277,7 @@ void SpinDragon::getExpression()
         getFunction();
 
     else if (tok.isNumber())
-        Decimal dec(tok);
+        getNumber();
 
     else if (tok.look(":|=|\\+"))
         getOperator();
@@ -271,7 +373,7 @@ void SpinDragon::getConstantPrimaryExpression()
         getIdentifier();
 
     else if (tok.isNumber())
-        getNumber();
+        getNumber()->print();
 
     else throw ExpectedError("primary expression");
 

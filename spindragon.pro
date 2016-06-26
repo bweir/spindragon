@@ -13,8 +13,8 @@ HEADERS += \
     tokens.h \
     paths.h \
     buffer.h \
-    ast.h \
     match.h \
+    tree.h \
 
 SOURCES += \
     main.cpp \
@@ -22,6 +22,5 @@ SOURCES += \
     errors.cpp \
     paths.cpp \
     buffer.cpp \
-    ast.cpp \
     match.cpp \
 

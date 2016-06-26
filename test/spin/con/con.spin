@@ -8,6 +8,7 @@ baconmode=(2+5)/3
 
     #$01, bacon [5444], chicken, cats
 
+    caken = %000000001010101010101010101010
     cat = 1.5
     cat1 = 1.2.3
     cat2 = 40f

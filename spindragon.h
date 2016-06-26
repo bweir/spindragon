@@ -5,6 +5,7 @@
 #include "tokens.h"
 #include "paths.h"
 #include "buffer.h"
+#include "tree.h"
 
 class SpinDragon : public QObject
 {
@@ -34,7 +35,6 @@ private:
     void getFunction();
     void getIdentifier();
     void getOperator();
-    void getNumber();
     void getLiteral();
     void getArrayIndex();
     void getExpression();
@@ -65,6 +65,13 @@ private:
 
     void error(Buffer & in, QString text);
     void error(Match m, QString text);
+
+    Node * getNumber();
+    Node * getDecimal();
+    Node * getFloat();
+    Node * getHexadecimal();
+    Node * getBinary();
+    Node * getQuaternary();
 
 public:
     explicit SpinDragon();
