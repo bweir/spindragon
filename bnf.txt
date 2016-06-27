@@ -1,12 +1,12 @@
 <constant-block> ::= ^CON <space> \n
 <public-block> ::= ^PUB <> \n
 
-<literal> ::= #<number>
+<literal> ::= #<expression>
 
 <float> ::= <decimal>.<decimal>
 
-<number> ::= <decimal>
-           | <float>
+<number> ::= <float>
+           | <decimal>
            | $<hexadecimal>
            | %%<quaternary>
            | %<binary>
@@ -30,26 +30,24 @@
 
 <con-block> ::= con
 
-<constant-line> ::= <constant-assignment>
-                  | <constant-array>
+<line> ::= <assignment>
+         | <array>
 
+<assignment> ::= <identifier> = <expression>
 
+<expression> ::= <term>
+               | <term> + <term>
+               | <term> - <term>
 
-<constant-assignment> ::= <constant-identifier> = <constant-expression>
+<term> ::= <factor>
+         | <factor> * <factor>
+         | <factor> / <factor>
 
-<constant-expression> ::= <constant-term>
-                        | <constant-term> + <constant-term>
-                        | <constant-term> - <constant-term>
+<array> ::= <literal>, <array-item>
 
-<constant-term> ::= <constant-factor>
-                  | <constant-factor> * <constant-factor>
-                  | <constant-factor> / <constant-factor>
-
-<constant-array> ::= <literal>, <constant-array-item>
-
-<constant-array-item> ::= <constant-identifier>
-                        | <constant-identifier>, <constant-array-item>
-                        | <constant-identifier [ <constant-offset> ], <constant-array-item>
+<array-item> ::= <identifier>
+               | <identifier>, <array-item>
+               | <identifier [ <offset> ], <array-item>
 
 # VAR grammar
 

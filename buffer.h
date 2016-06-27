@@ -26,6 +26,7 @@ public:
     void eatToken(QString t);
     int eatSpace();
     Match match(QString pattern);
+    Match get(QString pattern);
     bool look(QString pattern);
     bool atEnd();
     void getNewLine();

@@ -85,6 +85,13 @@ Match Buffer::match(QString pattern)
     }
 }
 
+Match Buffer::get(QString pattern)
+{
+    Match m = match(pattern);
+    eatSpace();
+    return m;
+}
+
 bool Buffer::look(QString pattern)
 {
     QRegularExpression re(pattern, QRegularExpression::DotMatchesEverythingOption

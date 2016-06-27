@@ -23,7 +23,6 @@ private:
     QString allowUnderscore(QString s);
 
     void getIndent();
-    void get(QString s);
     void print(QString s, QString s2);
 
     void getProgram();
@@ -33,11 +32,8 @@ private:
     void getNewFunctionBlock(QString pattern, Block block);
 
     void getFunction();
-    void getIdentifier();
-    void getOperator();
-    void getLiteral();
+    Node * getIdentifier();
     void getArrayIndex();
-    void getExpression();
 
     void getString();
     void getParameter();
@@ -46,19 +42,13 @@ private:
     void getConstantLine();
 
     void getConstantArray();
-    void getConstantArrayItem();
+    void getArrayItem();
 
-    void getConstantAssignment();
-    void getConstantExpression();
-    void getConstantAdd();
-    void getConstantSubtract();
-    void getConstantTerm();
-    void getConstantMultiply();
-    void getConstantDivide();
-    void getConstantFactor();
-    void getConstantIdentifier();
-    void getConstantPrimaryExpression();
-
+    Node * getAssignment();
+    Node * getExpression();
+    Node * getTerm();
+    Node * getFactor();
+    Node * getPrimaryExpression();
 
     void getObjectString();
     void getObjectLine();
@@ -66,6 +56,7 @@ private:
     void error(Buffer & in, QString text);
     void error(Match m, QString text);
 
+    Node * getLiteral();
     Node * getNumber();
     Node * getDecimal();
     Node * getFloat();

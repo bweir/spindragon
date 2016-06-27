@@ -123,23 +123,24 @@ Node * SpinDragon::getDecimal()
     return new DecimalNode(m);
 }
 
-void SpinDragon::getLiteral()
+Node * SpinDragon::getLiteral()
 {
     tok.match("#");
-    getNumber()->print();
+    Node * n = getNumber();
     tok.eatSpace();
+    return n;
 }
 
 void SpinDragon::getArrayIndex()
 {
-    get("\\[");
-    getConstantExpression();
-    get("\\]");
+    tok.get("\\[");
+    getExpression();
+    tok.get("\\]");
 }
 
 void SpinDragon::getFunction()
 {
-    getIdentifier();
+    getIdentifier()->print();
 
     if (tok.look("\\."))
     {
@@ -147,7 +148,7 @@ void SpinDragon::getFunction()
         print("DOT", m.text());
 
         if (tok.look("[_a-zA-Z]"))
-            getIdentifier();
+            getIdentifier()->print();
     }
     else
     {
@@ -160,12 +161,12 @@ void SpinDragon::getFunction()
     }
 }
 
-void SpinDragon::getIdentifier()
+Node * SpinDragon::getIdentifier()
 {
     try
     {
         Match m = tok.match("[_a-zA-Z][a-zA-Z_0-9]*");
-        print("IDENT", m.text());
+        return new IdentifierNode(m);
     }
     catch (Error & e)
     {
@@ -197,12 +198,6 @@ void SpinDragon::getParameters()
     tok.match("\\(");
     getParameter();
     tok.match("\\)");
-}
-
-void SpinDragon::getOperator()
-{
-    Match m = tok.match(":|=| |\\+");
-    print("OP", m.text());
 }
 
 void SpinDragon::getIndent()
@@ -271,149 +266,115 @@ Node * SpinDragon::getNumber()
     else throw ExpectedError("number");
 }
 
-void SpinDragon::getExpression()
-{
-    if (tok.isIdentifier())
-        getFunction();
 
-    else if (tok.isNumber())
-        getNumber();
-
-    else if (tok.look(":|=|\\+"))
-        getOperator();
-
-    else if (tok.isString())
-        getString();
-
-    else if (tok.look("\n"))
-        tok.getNewLine();
-
-    else throw ExpectedError("expression");
-}
-
-void SpinDragon::get(QString s)
-{
-    tok.match(s);
-    print("OP", s);
-    tok.eatSpace();
-}
-
-
-void SpinDragon::getConstantFactor()
+Node * SpinDragon::getFactor()
 {
     if (tok.look("\\("))
     {
-        get("\\(");
-        getConstantExpression();
-        get("\\)");
+        tok.get("\\(");
+        Node * n = new FactorNode(getExpression());
+        tok.get("\\)");
+        return n;
     }
     else
     {
-        getConstantPrimaryExpression();
+        return getPrimaryExpression();
     }
 }
 
-void SpinDragon::getConstantMultiply()
+Node * SpinDragon::getTerm()
 {
-    get("\\*");
-    getConstantFactor();
-}
-
-void SpinDragon::getConstantDivide()
-{
-    get("/");
-    getConstantFactor();
-}
-
-
-void SpinDragon::getConstantTerm()
-{
-    getConstantFactor();
+    TermNode * n = new TermNode(getFactor());
 
     while (tok.look("\\*|/"))
     {
         if (tok.look("\\*"))
-            getConstantMultiply();
-
+        {
+            Match m = tok.match("\\*");
+            tok.eatSpace();
+            n->add(m, getFactor());
+        }
         else if (tok.look("/"))
-            getConstantDivide();
+        {
+            Match m = tok.match("/");
+            tok.eatSpace();
+            n->add(m, getFactor());
+        }
     }
+
+    return n;
 }
 
-void SpinDragon::getConstantSubtract()
+Node * SpinDragon::getExpression()
 {
-    get("-");
-    getConstantTerm();
-}
-
-void SpinDragon::getConstantAdd()
-{
-    get("\\+");
-    getConstantTerm();
-}
-
-void SpinDragon::getConstantExpression()
-{
-    if (!tok.look("\\+|-"))
-        getConstantTerm();
+    ExpressionNode * n = new ExpressionNode(getTerm());
 
     while (tok.look("\\+|-"))
     {
         if (tok.look("\\+"))
-            getConstantAdd();
-
+        {
+            Match m = tok.match("\\+");
+            tok.eatSpace();
+            n->add(m, getTerm());
+        }
         else if (tok.look("-"))
-            getConstantSubtract();
+        {
+            Match m = tok.match("-");
+            tok.eatSpace();
+            n->add(m, getTerm());
+        }
     }
+
+    return n;
 }
 
-void SpinDragon::getConstantPrimaryExpression()
+Node * SpinDragon::getPrimaryExpression()
 {
+    Node * n;
     if (tok.isIdentifier())
-        getIdentifier();
+        n = getIdentifier();
 
     else if (tok.isNumber())
-        getNumber()->print();
+        n = getNumber();
 
     else throw ExpectedError("primary expression");
 
     tok.eatSpace();
+
+    return n;
 }
 
-void SpinDragon::getConstantIdentifier()
+Node * SpinDragon::getAssignment()
 {
-    getIdentifier();
+    Node * lhs = getIdentifier();
     tok.eatSpace();
+    Match m = tok.get("=");
+    Node * rhs = getExpression();
+
+    return new BinaryOpNode(lhs, m, rhs);
 }
 
-void SpinDragon::getConstantAssignment()
+void SpinDragon::getArrayItem()
 {
-    getConstantIdentifier();
-    get("=");
-    getConstantExpression();
-}
-
-void SpinDragon::getConstantArrayItem()
-{
-    getIdentifier();
+    getIdentifier()->print();
     tok.eatSpace();
 
     if (tok.look("\\["))
     {
-        get("\\[");
-        getConstantPrimaryExpression();
-        get("\\]");
+        tok.get("\\[");
+        getPrimaryExpression();
+        tok.get("\\]");
     }
 }
 
 void SpinDragon::getConstantArray()
 {
-    getLiteral();
+    getLiteral()->print();
 
     while (tok.look(","))
     {
-        get(",");
-        getConstantArrayItem();
+        tok.get(",");
+        getArrayItem();
     }
 }
 
@@ -422,7 +383,7 @@ void SpinDragon::getConstantLine()
     getIndent();
 
     if (tok.isIdentifier())
-        getConstantAssignment();
+        getAssignment()->print();
 
     else if (tok.look("#"))
         getConstantArray();
@@ -465,13 +426,13 @@ void SpinDragon::getObjectLine()
 {
     tok.eatSpace();
 
-    getIdentifier();
+    getIdentifier()->print();
     tok.eatSpace();
 
     if (tok.look("\\["))
         getArrayIndex();
 
-    get(":");
+    tok.get(":");
     getObjectString();
 }
 
@@ -479,7 +440,7 @@ void SpinDragon::getObjectLine()
 void SpinDragon::getNewBlock(QString pattern, Block block)
 {
     Match m = tok.match(pattern);
-    print("NEWBLOCK", m.text());
+    print("BLOCK", m.text());
     tok.eatSpace();
     _block = block;
     if (tok.look("[^\n]")) 
@@ -492,7 +453,7 @@ void SpinDragon::getNewBlock(QString pattern, Block block)
 void SpinDragon::getNewFunctionBlock(QString pattern, Block block)
 {
     Match m = tok.match(pattern);
-    print("NEWBLOCK", m.text());
+    print("BLOCK", m.text());
     tok.eatSpace();
     _block = block;
 
