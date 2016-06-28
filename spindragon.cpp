@@ -126,7 +126,7 @@ Node * SpinDragon::getDecimal()
 Node * SpinDragon::getLiteral()
 {
     tok.match("#");
-    Node * n = getNumber();
+    Node * n = getBitwiseOrExpression();
     tok.eatSpace();
     return n;
 }
@@ -272,7 +272,7 @@ Node * SpinDragon::getFactor()
     if (tok.look("\\("))
     {
         tok.get("\\(");
-        Node * n = new FactorNode(getExpression());
+        Node * n = new FactorNode(getBitwiseXorExpression());
         tok.get("\\)");
         return n;
     }
@@ -284,44 +284,86 @@ Node * SpinDragon::getFactor()
 
 Node * SpinDragon::getTerm()
 {
-    TermNode * n = new TermNode(getFactor());
-
-    while (tok.look("\\*|/"))
-    {
-        if (tok.look("\\*"))
-        {
-            Match m = tok.match("\\*");
-            tok.eatSpace();
-            n->add(m, getFactor());
-        }
-        else if (tok.look("/"))
-        {
-            Match m = tok.match("/");
-            tok.eatSpace();
-            n->add(m, getFactor());
-        }
-    }
-
-    return n;
+    return getExpression(QStringList() 
+            << "\\*" 
+            << "//" 
+            << "/", 
+            &SpinDragon::getFactor);
 }
 
 Node * SpinDragon::getExpression()
 {
-    ExpressionNode * n = new ExpressionNode(getTerm());
+    return getExpression(QStringList() 
+            << "\\+" 
+            << "-", 
+            &SpinDragon::getTerm);
+}
 
-    while (tok.look("\\+|-"))
+Node * SpinDragon::getShiftExpression()
+{
+    return getExpression(QStringList() 
+            << "<<" 
+            << ">>" 
+            << "~>", 
+            &SpinDragon::getExpression);
+}
+
+Node * SpinDragon::getRelationalExpression()
+{
+    return getExpression(QStringList() 
+            << "<" 
+            << ">" 
+            << "<=" 
+            << ">=", 
+            &SpinDragon::getShiftExpression);
+}
+
+Node * SpinDragon::getEqualityExpression()
+{
+    return getExpression(QStringList() 
+            << "==" 
+            << "!=", 
+            &SpinDragon::getRelationalExpression);
+}
+
+Node * SpinDragon::getBitwiseAndExpression()
+{
+    return getExpression(QStringList() 
+            << "&", 
+            &SpinDragon::getEqualityExpression);
+}
+
+Node * SpinDragon::getBitwiseXorExpression()
+{
+    return getExpression(QStringList() 
+            << "\\^", 
+            &SpinDragon::getBitwiseAndExpression);
+}
+
+Node * SpinDragon::getBitwiseOrExpression()
+{
+    return getExpression(QStringList() 
+            << "\\|", 
+            &SpinDragon::getBitwiseXorExpression);
+}
+
+Node * SpinDragon::getExpression(QStringList ops, Node * (SpinDragon::*expr)())
+{
+    ExpressionNode * n = new ExpressionNode((this->*expr)());
+
+    QString optoken = ops.join("|");
+
+    while (tok.look(optoken))
     {
-        if (tok.look("\\+"))
+        foreach(QString op, ops)
         {
-            Match m = tok.match("\\+");
-            tok.eatSpace();
-            n->add(m, getTerm());
-        }
-        else if (tok.look("-"))
-        {
-            Match m = tok.match("-");
-            tok.eatSpace();
-            n->add(m, getTerm());
+            if (tok.look(op))
+            {
+                Match m = tok.match(op);
+                tok.eatSpace();
+                n->add(op, (this->*expr)());
+                break;
+            }
         }
     }
 
@@ -331,6 +373,7 @@ Node * SpinDragon::getExpression()
 Node * SpinDragon::getPrimaryExpression()
 {
     Node * n;
+
     if (tok.isIdentifier())
         n = getIdentifier();
 
@@ -369,7 +412,9 @@ void SpinDragon::getArrayItem()
 
 void SpinDragon::getConstantArray()
 {
-    getLiteral()->print();
+    Node * n = getLiteral();
+    n->print();
+    printf("\n%i\n",n->value().toInt());
 
     while (tok.look(","))
     {

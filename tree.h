@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <QList>
+#include <QVariant>
 
 #include <stdio.h>
 #include "errors.h"
@@ -11,11 +12,15 @@ class Node
     Match _m;
     QString _name;
 
+protected:
+    QVariant _value;
+
 public:
     Node(Match m, QString name)
     {
         _m = m;
         _name = name;
+        _value = m.text();
     }
 
     QString name()
@@ -27,6 +32,11 @@ public:
 
     virtual void print() = 0;
 
+    virtual QVariant value()
+    {
+        return _value;
+    }
+
     void print(QString s2)
     {
         printf("%s '%s' ", qPrintable(_name), qPrintable(s2));
@@ -36,8 +46,6 @@ public:
 
 class DecimalNode : public Node
 {
-    quint32 _value;
-
 public:
     DecimalNode(Match m)
         : Node(m, "DEC")
@@ -47,19 +55,13 @@ public:
 
     void print()
     {
-        Node::print(QString::number(_value));
-    }
-
-    quint32 value()
-    {
-        return _value;
+        Node::print(QString::number(_value.toInt()));
     }
 };
 
 
 class FloatNode : public Node
 {
-    float _value;
 
 public:
     FloatNode(Match m)
@@ -70,12 +72,7 @@ public:
 
     void print()
     {
-        Node::print(QString::number(_value));
-    }
-
-    float value()
-    {
-        return _value;
+        Node::print(QString::number(_value.toFloat()));
     }
 };
 
@@ -83,8 +80,6 @@ public:
 
 class HexadecimalNode : public Node
 {
-    quint32 _value;
-
 public:
     HexadecimalNode(Match m)
         : Node(m, "HEX")
@@ -105,20 +100,13 @@ public:
 
     void print()
     {
-        Node::print(QString::number(_value, 16));
-    }
-
-    quint32 value()
-    {
-        return _value;
+        Node::print(QString::number(_value.toUInt(), 16));
     }
 };
 
 
 class BinaryNode : public Node
 {
-    quint32 _value;
-
 public:
     BinaryNode(Match m)
         : Node(m, "BIN")
@@ -139,7 +127,7 @@ public:
 
     void print()
     {
-        QString s = QString::number(_value, 2);
+        QString s = QString::number(_value.toUInt(), 2);
         printf("%s '", qPrintable(name()));
         for (int i = 0; i < s.size(); i++)
         {
@@ -150,19 +138,12 @@ public:
         printf("'");
         fflush(stdout);
     }
-
-    quint32 value()
-    {
-        return _value;
-    }
 };
 
 
 
 class QuaternaryNode : public Node
 {
-    quint32 _value;
-
 public:
     QuaternaryNode(Match m)
         : Node(m, "QUAT")
@@ -183,20 +164,13 @@ public:
 
     void print()
     {
-        Node::print(QString::number(_value, 4));
-    }
-
-    quint32 value()
-    {
-        return _value;
+        Node::print(QString::number(_value.toUInt(), 4));
     }
 };
 
 
 class IdentifierNode : public Node
 {
-    QString _value;
-
 public:
     IdentifierNode(Match m)
         : Node(m, "IDENT")
@@ -206,12 +180,7 @@ public:
 
     void print()
     {
-        Node::print(_value);
-    }
-
-    QString value()
-    {
-        return _value;
+        Node::print(_value.toString());
     }
 };
 
@@ -233,59 +202,16 @@ public:
     void print()
     {
         _lhs->print();
-        Node::print(_op);
+        printf(" %s ", qPrintable(_op));
         _rhs->print();
     }
-
-    QString value()
-    {
-        return _op;
-    }
 };
-
-
-
-class TermNode : public Node
-{
-    Node * _factor;
-    QList<Match> _ops;
-    QList<Node *> _factors;
-
-public:
-    TermNode(Node * factor)
-        : Node(Match(), "TERM")
-    {
-        _factor = factor;
-    }
-
-    void add(Match op, Node * factor)
-    {
-        _ops.append(op);
-        _factors.append(factor);
-    }
-
-    void print()
-    {
-        _factor->print();
-        for (int i = 0; i < _factors.size(); i++)
-        {
-            printf("%s",qPrintable(_ops[i].text()));
-            _factors[i]->print();
-        }
-    }
-
-    QList<Node *> value()
-    {
-        return _factors;
-    }
-};
-
 
 
 class ExpressionNode : public Node
 {
     Node * _term;
-    QList<Match> _ops;
+    QList<QString> _ops;
     QList<Node *> _terms;
 
 public:
@@ -295,7 +221,7 @@ public:
         _term = term;
     }
 
-    void add(Match op, Node * term)
+    void add(QString op, Node * term)
     {
         _ops.append(op);
         _terms.append(term);
@@ -306,14 +232,73 @@ public:
         _term->print();
         for (int i = 0; i < _terms.size(); i++)
         {
-            printf(" %s ",qPrintable(_ops[i].text()));
+            printf(" %s ",qPrintable(_ops[i]));
             _terms[i]->print();
         }
     }
 
-    QList<Node *> value()
+    QVariant value()
     {
-        return _terms;
+
+        if (_terms.isEmpty())
+            return _term->value();
+
+        quint32 v1 = _term->value().toInt();
+        printf("%i", v1);
+
+        for (int i = 0; i < _terms.size(); i++)
+        {
+            quint32 v2 = _terms[i]->value().toInt();
+            printf(" %s %i", qPrintable(_ops[i]), v2);
+
+            if (_ops[i] == "\\+")
+                v1 = v1 + v2;
+            else if (_ops[i] == "-")
+                v1 = v1 - v2;
+            else if (_ops[i] == "\\*")
+                v1 = v1 * v2;
+            else if (_ops[i] == "/")
+                v1 = v1 / v2;
+            else if (_ops[i] == "//")
+                v1 = v1 % v2;
+
+            // shift operators
+            else if (_ops[i] == ">>")
+                v1 = v1 >> v2;
+            else if (_ops[i] == "~>")
+                v1 = ((qint32) v1) >> v2;
+            else if (_ops[i] == "<<")
+                v1 = v1 << v2;
+
+            // bitwise operators
+            else if (_ops[i] == "&")
+                v1 = v1 & v2;
+            else if (_ops[i] == "\\|")
+                v1 = v1 | v2;
+            else if (_ops[i] == "\\^")
+                v1 = v1 ^ v2;
+
+            // relational operators
+            else if (_ops[i] == ">")
+                v1 = (v1 > v2 ? -1 : 0);
+            else if (_ops[i] == "<")
+                v1 = (v1 < v2 ? -1 : 0);
+            else if (_ops[i] == ">=")
+                v1 = (v1 >= v2 ? -1 : 0);
+            else if (_ops[i] == "<=")
+                v1 = (v1 <= v2 ? -1 : 0);
+
+            // equality operators
+            else if (_ops[i] == "==")
+                v1 = (v1 == v2 ? -1 : 0);
+            else if (_ops[i] == "!=")
+                v1 = (v1 != v2 ? -1 : 0);
+
+
+
+        }
+
+        return QVariant(v1);
     }
 };
 
@@ -339,9 +324,9 @@ public:
         fflush(stdout);
     }
 
-    Node * value()
+    QVariant value()
     {
-        return _expr;
+        return _expr->value();
     }
 };
 

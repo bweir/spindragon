@@ -1,6 +1,10 @@
 <constant-block> ::= ^CON <space> \n
 <public-block> ::= ^PUB <> \n
 
+<operator> : '+' | '-' | '*' | '/' | '//'
+
+<relational-operator> : '==' | '>=' | '<='
+
 <literal> ::= #<expression>
 
 <float> ::= <decimal>.<decimal>
@@ -62,3 +66,6 @@
 # DAT grammar
 # ASM grammar
 
+
+
+    really need binop precedence table

@@ -44,8 +44,16 @@ private:
     void getConstantArray();
     void getArrayItem();
 
+    Node * getExpression(QStringList ops, Node * (SpinDragon::*expr)());
+
     Node * getAssignment();
     Node * getExpression();
+    Node * getBitwiseOrExpression();
+    Node * getBitwiseXorExpression();
+    Node * getBitwiseAndExpression();
+    Node * getEqualityExpression();
+    Node * getRelationalExpression();
+    Node * getShiftExpression();
     Node * getTerm();
     Node * getFactor();
     Node * getPrimaryExpression();
